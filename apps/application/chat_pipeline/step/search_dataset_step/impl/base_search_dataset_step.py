@@ -24,25 +24,35 @@ from smartdoc.conf import PROJECT_DIR
 class BaseSearchDatasetStep(ISearchDatasetStep):
 
     def execute(self, problem_text: str, dataset_id_list: list[str], exclude_document_id_list: list[str],
-                exclude_paragraph_id_list: list[str], top_n: int, similarity: float, padding_problem_text: str = None,
+                exclude_paragraph_id_list: list[str], top_n: int, similarity: float, rrf_k: float, padding_problem_text: str = None,
                 search_mode: str = None,
                 **kwargs) -> List[ParagraphPipelineModel]:
+        print("---------------------------------BaseSearchDatasetStep execute----------------------------------------------")
+        
         exec_problem_text = padding_problem_text if padding_problem_text is not None else problem_text
         embedding_model = EmbeddingModel.get_embedding_model()
         embedding_value = embedding_model.embed_query(exec_problem_text)
         vector = VectorStore.get_embedding_vector()
         embedding_list = vector.query(exec_problem_text, embedding_value, dataset_id_list, exclude_document_id_list,
-                                      exclude_paragraph_id_list, True, top_n, similarity, SearchMode(search_mode))
+                                      exclude_paragraph_id_list, True, top_n, similarity, rrf_k, SearchMode(search_mode))
         if embedding_list is None:
             return []
+        #print(embedding_list)
         paragraph_list = self.list_paragraph(embedding_list, vector)
+        print("---------------------------------BaseSearchDatasetStep execute paragraph_list----------------------------------------------")
+        print(paragraph_list)
         result = [self.reset_paragraph(paragraph, embedding_list) for paragraph in paragraph_list]
+        print("------------------------BaseSearchDatasetStep execute result-------------------------")
+        #重新更加分数排序
+        result = sorted(result, key=lambda x: x.comprehensive_score, reverse=True)
+        print(result[0].comprehensive_score)
         return result
 
     @staticmethod
     def reset_paragraph(paragraph: Dict, embedding_list: List) -> ParagraphPipelineModel:
         filter_embedding_list = [embedding for embedding in embedding_list if
                                  str(embedding.get('paragraph_id')) == str(paragraph.get('id'))]
+        #print(filter_embedding_list)
         if filter_embedding_list is not None and len(filter_embedding_list) > 0:
             find_embedding = filter_embedding_list[-1]
             return (ParagraphPipelineModel.builder()
@@ -53,6 +63,7 @@ class BaseSearchDatasetStep(ISearchDatasetStep):
                     .add_document_name(paragraph.get('document_name'))
                     .add_hit_handling_method(paragraph.get('hit_handling_method'))
                     .add_directly_return_similarity(paragraph.get('directly_return_similarity'))
+                    .add_search_mode(find_embedding.get('search_mode'))
                     .build())
 
     @staticmethod
@@ -66,6 +77,8 @@ class BaseSearchDatasetStep(ISearchDatasetStep):
 
     @staticmethod
     def list_paragraph(embedding_list: List, vector):
+        print("----------------------base_search_dataset_step list_paragraph embedding_list-------------------")
+        #print(embedding_list)
         paragraph_id_list = [row.get('paragraph_id') for row in embedding_list]
         if paragraph_id_list is None or len(paragraph_id_list) == 0:
             return []

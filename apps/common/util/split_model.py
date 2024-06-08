@@ -338,7 +338,9 @@ class SplitModel:
         text = text.replace('\r', '\n')
         text = text.replace("\0", '')
         result_tree = self.parse_to_tree(text, 0)
+        print(result_tree)
         result = result_tree_to_paragraph(result_tree, [], [])
+        print(result)
         return [item for item in [self.post_reset_paragraph(row) for row in result] if
                 'content' in item and len(item.get('content').strip()) > 0]
 

@@ -47,7 +47,11 @@
                       {{ index + 1 + '' }}</AppAvatar
                     >
                   </template>
-                  <div class="active-button primary">{{ item.similarity?.toFixed(3) }}</div>
+                  <div class="active-button primary">
+                    <p v-show="cloneForm.search_mode === 'embedding'">语义检索：{{ item.comprehensive_score?.toFixed(3) }}</p>
+                    <p v-show="cloneForm.search_mode === 'keywords'">全文检索：{{ item.comprehensive_score?.toFixed(3) }}</p>
+                    <p v-show="cloneForm.search_mode === 'blend'">混合检索：{{ item.comprehensive_score?.toFixed(5) }}</p>
+                  </div>
                   <template #footer>
                     <div class="footer-content flex-between">
                       <el-text>
@@ -117,7 +121,7 @@
               <el-radio value="blend" size="large">
                 <p class="mb-4">混合检索</p>
                 <el-text type="info"
-                  >同时执行全文检索和向量检索，再进行重排序，从两类查询结果中选择匹配用户问题的最佳结果</el-text
+                  >同时执行全文检索和向量检索，再进行RRF重排序，从两类查询结果中选择匹配用户问题的最佳结果</el-text
                 >
               </el-radio>
             </el-card>
@@ -145,6 +149,19 @@
                 v-model="cloneForm.top_number"
                 :min="1"
                 :max="10"
+                controls-position="right"
+                class="w-full"
+              />
+            </div>
+          </el-col>
+          <el-col :span="12">
+            <div class="mb-16">
+              <div class="title mb-8">RRF常数 K</div>
+              <el-input-number
+                v-model="cloneForm.rrf_k"
+                :min="0"
+                :max="100"
+                :precision="3"
                 controls-position="right"
                 class="w-full"
               />
@@ -208,6 +225,7 @@ const inputValue = ref('')
 const formInline = ref({
   similarity: 0.6,
   top_number: 5,
+  rrf_k: 0.6,
   search_mode: 'embedding'
 })
 

@@ -77,6 +77,18 @@
               </el-col>
             </el-row>
 
+            <el-col :span="12">
+                <el-form-item :label="$t('views.application.applicationForm.dialogues.rrf_k')">
+                  <el-input-number
+                    v-model="form.rrf_k"
+                    :min="0"
+                    :max="100"
+                    controls-position="right"
+                    class="w-full"
+                  />
+                </el-form-item>
+              </el-col>
+
             <el-form-item :label="$t('views.application.applicationForm.dialogues.maxCharacters')">
               <el-slider
                 v-model="form.max_paragraph_char_number"
@@ -172,6 +184,7 @@ const form = ref<any>({
   search_mode: 'embedding',
   top_n: 3,
   similarity: 0.6,
+  rrf_k: 0.6,
   max_paragraph_char_number: 5000,
   no_references_setting: {
     status: 'ai_questioning',

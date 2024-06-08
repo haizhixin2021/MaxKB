@@ -30,7 +30,11 @@ class BaseGenerateHumanMessageStep(IGenerateHumanMessageStep):
                 **kwargs) -> List[BaseMessage]:
         prompt = prompt if (paragraph_list is not None and len(paragraph_list) > 0) else no_references_setting.get(
             'value')
+        print("---------------------BaseGenerateHumanMessageStep prompt-------------------------")
+        print(prompt)
         exec_problem_text = padding_problem_text if padding_problem_text is not None else problem_text
+        print("---------------------exec_problem_text-------------------------")
+        print(exec_problem_text)
         start_index = len(history_chat_record) - dialogue_number
         history_message = [[history_chat_record[index].get_human_message(), history_chat_record[index].get_ai_message()]
                            for index in

@@ -21,7 +21,10 @@ def sql_execute(sql: str, params):
     with connection.cursor() as cursor:
         cursor.execute(sql, params)
         columns = list(map(lambda d: d.name, cursor.description))
+        #print("6666666666666666666666666666666666666666666666")
+        #print(columns)
         res = cursor.fetchall()
+        #print(res)
         result = list(map(lambda row: dict(list(zip(columns, row))), res))
         cursor.close()
         return result
@@ -47,6 +50,7 @@ def select_list(sql: str, params: List):
     :param params:  sql的参数
     :return: 查询结果
     """
+    #print(params)
     result_list = sql_execute(sql, params)
     if result_list is None:
         return []

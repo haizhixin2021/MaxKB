@@ -9,12 +9,17 @@ EMAIL_HOST_PASSWORD: ${EMAIL_HOST_PASSWORD}
 
 # 数据库链接信息
 DB_NAME: maxkb
-DB_HOST: 127.0.0.1
-DB_PORT: 5432
-DB_USER: root
-DB_PASSWORD: Password123@postgres
+DB_HOST: ora3.880219.xyz
+DB_PORT: 55612
+DB_USER: maxkb
+DB_PASSWORD: cGEXwWin5tje
 DB_ENGINE: django.db.backends.postgresql_psycopg2
-EMBEDDING_MODEL_PATH: /opt/maxkb/model/embedding
-EMBEDDING_MODEL_NAME: /opt/maxkb/model/embedding/shibing624_text2vec-base-chinese
+EMBEDDING_MODEL_PATH: /teamspace/studios/model-dataset/model
+EMBEDDING_MODEL_NAME: /teamspace/studios/model-dataset/model/shibing624-text2vec-base-chinese
+TOKENIZER_PATH: /teamspace/studios/model-dataset/model/tokenizer
+TOKENIZER_NAME: /teamspace/studios/model-dataset/model/tokenizer/openai-community-gpt2
+
+
+
 
 DEBUG: false

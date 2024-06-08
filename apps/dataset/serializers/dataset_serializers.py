@@ -537,6 +537,8 @@ class DataSetSerializers(serializers.ModelSerializer):
                                               error_messages=ErrMessage.char("响应Top"))
         similarity = serializers.FloatField(required=True, max_value=1, min_value=0,
                                             error_messages=ErrMessage.char("相似度"))
+        rrf_k = serializers.FloatField(required=True, max_value=100, min_value=0,
+                                            error_messages=ErrMessage.char("rrf_k 常数K"))
         search_mode = serializers.CharField(required=True, validators=[
             validators.RegexValidator(regex=re.compile("^embedding|keywords|blend$"),
                                       message="类型只支持register|reset_password", code=500)
@@ -550,14 +552,18 @@ class DataSetSerializers(serializers.ModelSerializer):
         def hit_test(self):
             self.is_valid()
             vector = VectorStore.get_embedding_vector()
+            print(vector)
             exclude_document_id_list = [str(document.id) for document in
                                         QuerySet(Document).filter(
                                             dataset_id=self.data.get('id'),
                                             is_active=False)]
+            print("---------------------------hit_test data-------------------------")
+            print(self.data)
             # 向量库检索
             hit_list = vector.hit_test(self.data.get('query_text'), [self.data.get('id')], exclude_document_id_list,
                                        self.data.get('top_number'),
                                        self.data.get('similarity'),
+                                       self.data.get('rrf_k'),
                                        SearchMode(self.data.get('search_mode')),
                                        EmbeddingModel.get_embedding_model())
             hit_dict = reduce(lambda x, y: {**x, **y}, [{hit.get('paragraph_id'): hit} for hit in hit_list], {})

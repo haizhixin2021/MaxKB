@@ -74,6 +74,7 @@ def event_content(response,
                 request_token = chat_model.get_num_tokens_from_messages(message_list)
                 response_token = chat_model.get_num_tokens(all_text)
             except Exception as e:
+                print(e)
                 request_token = 0
                 response_token = 0
         else:
@@ -110,6 +111,7 @@ class BaseChatStep(IChatStep):
                 no_references_setting=None,
                 **kwargs):
         if stream:
+            print("---------------------------base_chat_step  execute_stream--------------------")
             return self.execute_stream(message_list, chat_id, problem_text, post_response_handler, chat_model,
                                        paragraph_list,
                                        manage, padding_problem_text, client_id, client_type, no_references_setting)
@@ -144,6 +146,7 @@ class BaseChatStep(IChatStep):
                           chat_model: BaseChatModel = None,
                           paragraph_list=None,
                           no_references_setting=None):
+        print(message_list)                  
         if paragraph_list is None:
             paragraph_list = []
         directly_return_chunk_list = [AIMessageChunk(content=paragraph.content)

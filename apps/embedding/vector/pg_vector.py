@@ -82,23 +82,29 @@ class PGVector(BaseVectorStore):
 
     def hit_test(self, query_text, dataset_id_list: list[str], exclude_document_id_list: list[str], top_number: int,
                  similarity: float,
+                 rrf_k: float,
                  search_mode: SearchMode,
                  embedding: HuggingFaceEmbeddings):
         if dataset_id_list is None or len(dataset_id_list) == 0:
             return []
         exclude_dict = {}
+        print("------------------------pgvector.py hit_test-----------------------------")
+        #print(embedding)
         embedding_query = embedding.embed_query(query_text)
+        #print(embedding_query)
         query_set = QuerySet(Embedding).filter(dataset_id__in=dataset_id_list, is_active=True)
+        #print(query_set)
         if exclude_document_id_list is not None and len(exclude_document_id_list) > 0:
             exclude_dict.__setitem__('document_id__in', exclude_document_id_list)
         query_set = query_set.exclude(**exclude_dict)
         for search_handle in search_handle_list:
             if search_handle.support(search_mode):
-                return search_handle.handle(query_set, query_text, embedding_query, top_number, similarity, search_mode)
+                return search_handle.handle(query_set, query_text, embedding_query, top_number, similarity, rrf_k, search_mode)
 
     def query(self, query_text: str, query_embedding: List[float], dataset_id_list: list[str],
               exclude_document_id_list: list[str],
               exclude_paragraph_list: list[str], is_active: bool, top_n: int, similarity: float,
+              rrf_k: float,
               search_mode: SearchMode):
         exclude_dict = {}
         if dataset_id_list is None or len(dataset_id_list) == 0:
@@ -111,7 +117,7 @@ class PGVector(BaseVectorStore):
         query_set = query_set.exclude(**exclude_dict)
         for search_handle in search_handle_list:
             if search_handle.support(search_mode):
-                return search_handle.handle(query_set, query_text, query_embedding, top_n, similarity, search_mode)
+                return search_handle.handle(query_set, query_text, query_embedding, top_n, similarity, rrf_k, search_mode)
 
     def update_by_source_id(self, source_id: str, instance: Dict):
         QuerySet(Embedding).filter(source_id=source_id).update(**instance)
@@ -153,7 +159,7 @@ class ISearch(ABC):
 
     @abstractmethod
     def handle(self, query_set, query_text, query_embedding, top_number: int,
-               similarity: float, search_mode: SearchMode):
+               similarity: float, rrf_k: float, search_mode: SearchMode):
         pass
 
 
@@ -164,14 +170,19 @@ class EmbeddingSearch(ISearch):
                query_embedding,
                top_number: int,
                similarity: float,
+               rrf_k: float,
                search_mode: SearchMode):
         exec_sql, exec_params = generate_sql_by_query_dict({'embedding_query': query_set},
                                                            select_string=get_file_content(
                                                                os.path.join(PROJECT_DIR, "apps", "embedding", 'sql',
                                                                             'embedding_search.sql')),
                                                            with_table_name=True)
+        print(exec_sql)
+        #print(exec_params)
         embedding_model = select_list(exec_sql,
                                       [json.dumps(query_embedding), *exec_params, similarity, top_number])
+        a = [ { "paragraph_id": a["paragraph_id"], "comprehensive_score": a["comprehensive_score"], 
+            "similarity": a["similarity"], "search_mode": "embedding" } for a in embedding_model]
         return embedding_model
 
     def support(self, search_mode: SearchMode):
@@ -185,6 +196,7 @@ class KeywordsSearch(ISearch):
                query_embedding,
                top_number: int,
                similarity: float,
+               rrf_k: float,
                search_mode: SearchMode):
         exec_sql, exec_params = generate_sql_by_query_dict({'keywords_query': query_set},
                                                            select_string=get_file_content(
@@ -193,19 +205,22 @@ class KeywordsSearch(ISearch):
                                                            with_table_name=True)
         embedding_model = select_list(exec_sql,
                                       [to_query(query_text), *exec_params, similarity, top_number])
+        a = [ { "paragraph_id": a["paragraph_id"], "comprehensive_score": a["comprehensive_score"], 
+            "similarity": a["similarity"], "search_mode": "keywords" } for a in embedding_model]
         return embedding_model
 
     def support(self, search_mode: SearchMode):
         return search_mode.value == SearchMode.keywords.value
 
 
-class BlendSearch(ISearch):
+class BlendSearch1(ISearch):
     def handle(self,
                query_set,
                query_text,
                query_embedding,
                top_number: int,
                similarity: float,
+               rrf_k: float,
                search_mode: SearchMode):
         exec_sql, exec_params = generate_sql_by_query_dict({'embedding_query': query_set},
                                                            select_string=get_file_content(
@@ -220,5 +235,65 @@ class BlendSearch(ISearch):
     def support(self, search_mode: SearchMode):
         return search_mode.value == SearchMode.blend.value
 
+class BlendSearch(ISearch):
+    def handle(self,
+               query_set,
+               query_text,
+               query_embedding,
+               top_number: int,
+               similarity: float,
+               rrf_k: float,
+               search_mode: SearchMode):
+        
+        #先执行语义收索
+        embeddingSearch = EmbeddingSearch()
+        embeddingSearchRlt = embeddingSearch.handle(query_set, query_text, query_embedding, top_number, 0.000, rrf_k, search_mode)
+        print("-----------------------embeddingSearchRlt--------------------------")
+        print(embeddingSearchRlt)
+        #在执行全文关键字检索
+        keywordsSearch = KeywordsSearch()
+        keywordsSearchRlt = keywordsSearch.handle(query_set, query_text, query_embedding, top_number, 0.000, rrf_k, search_mode)
+        print("-----------------------keywordsSearchRlt--------------------------")
+        print(keywordsSearchRlt)
+
+        #利用rrf重新排序
+        print("-------------------rrf_k-------------------")
+        print(rrf_k)
+        embedding_model = rrf([embeddingSearchRlt, keywordsSearchRlt], rrf_k)[:top_number]
+        a = [ { "paragraph_id": a["paragraph_id"], "comprehensive_score": a["comprehensive_score"], 
+            "similarity": a["similarity"], "search_mode": "blend" } for a in embedding_model]
+        print("``````````````rrf 排序后 embedding_model")
+        print(a)
+        return a
+
+    def support(self, search_mode: SearchMode):
+        return search_mode.value == SearchMode.blend.value
+
 
 search_handle_list = [EmbeddingSearch(), KeywordsSearch(), BlendSearch()]
+
+def rrf(rankings, k=60):
+    if not isinstance(rankings, list):
+        raise ValueError("Rankings should be a list.")
+    scores = dict()
+    for ranking in rankings:
+        #print(ranking)
+        if not ranking:  # 如果ranking为空，跳过它
+            continue
+        for i, doc in enumerate(ranking):
+            if not isinstance(doc, dict):
+                raise ValueError("Each item should be dict type.")
+            paragraph_id = doc.get('paragraph_id', None)
+            if paragraph_id is None:
+                raise ValueError("Each item should have 'paragraph_id' key.")
+            if paragraph_id not in scores:
+                scores[paragraph_id] = { "paragraph_id": paragraph_id, "comprehensive_score": 0, "similarity": doc["similarity"] }
+                print("``````````````````````333333333333333333")
+                print(scores)
+            new_rank = scores[paragraph_id]["comprehensive_score"] + 1 / (k + i + 1)
+            print(new_rank)
+            scores[paragraph_id] = { "paragraph_id": paragraph_id, "comprehensive_score": new_rank, "similarity": doc["similarity"] }
+    print(scores)
+    sorted_scores = sorted(scores.values(), key=lambda x: x["comprehensive_score"], reverse=True)
+    print(sorted_scores)
+    return sorted_scores

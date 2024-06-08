@@ -9,10 +9,10 @@ EMAIL_HOST_PASSWORD:
 
 # 数据库链接信息
 DB_NAME: maxkb
-DB_HOST: localhost
-DB_PORT: 5432
-DB_USER: root
-DB_PASSWORD: xxxxxxx
+DB_HOST: ora3.880219.xyz
+DB_PORT: 55612
+DB_USER: maxkb
+DB_PASSWORD: cGEXwWin5tje
 DB_ENGINE: django.db.backends.postgresql_psycopg2
 
 DEBUG: false

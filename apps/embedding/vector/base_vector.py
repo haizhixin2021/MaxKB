@@ -115,13 +115,15 @@ class BaseVectorStore(ABC):
     @abstractmethod
     def query(self, query_text: str, query_embedding: List[float], dataset_id_list: list[str],
               exclude_document_id_list: list[str],
-              exclude_paragraph_list: list[str], is_active: bool, top_n: int, similarity: float,
+              exclude_paragraph_list: list[str], is_active: bool, top_n: int, similarity: float, 
+              rrf_k: float,
               search_mode: SearchMode):
         pass
 
     @abstractmethod
     def hit_test(self, query_text, dataset_id: list[str], exclude_document_id_list: list[str], top_number: int,
                  similarity: float,
+                 rrf_k: float, 
                  search_mode: SearchMode,
                  embedding: HuggingFaceEmbeddings):
         pass

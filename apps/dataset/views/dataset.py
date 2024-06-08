@@ -134,6 +134,7 @@ class Dataset(APIView):
                                                  "query_text": request.query_params.get("query_text"),
                                                  "top_number": request.query_params.get("top_number"),
                                                  'similarity': request.query_params.get('similarity'),
+                                                 'rrf_k': request.query_params.get('rrf_k'),
                                                  'search_mode': request.query_params.get('search_mode')}).hit_test(
                 ))
 

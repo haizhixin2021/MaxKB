@@ -31,7 +31,11 @@
                       {{ index + 1 + '' }}</AppAvatar
                     >
                   </template>
-                  <div class="active-button primary">{{ item.similarity?.toFixed(3) }}</div>
+                  <div class="active-button primary">
+                    <p v-show="item.search_mode === 'embedding'">语义检索：{{ item.comprehensive_score?.toFixed(3) }}</p>
+                    <p v-show="item.search_mode === 'keywords'">全文检索：{{ item.comprehensive_score?.toFixed(3) }}</p>
+                    <p v-show="item.search_mode === 'blend'">混合检索：{{ item.comprehensive_score?.toFixed(5) }}</p>
+                  </div>
                   <template #description>
                     <el-scrollbar height="150">
                       <MdPreview
@@ -89,7 +93,7 @@ const open = (data: any, id?: string) => {
   detail.value.paragraph_list = id
     ? detail.value.paragraph_list.filter((v: any) => v.dataset_id === id)
     : detail.value.paragraph_list
-  detail.value.paragraph_list = arraySort(detail.value.paragraph_list, 'similarity', true)
+  detail.value.paragraph_list = arraySort(detail.value.paragraph_list, 'comprehensive_score', true)
   dialogVisible.value = true
 }
 onBeforeUnmount(() => {

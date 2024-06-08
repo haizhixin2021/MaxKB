@@ -101,7 +101,8 @@ export default {
       concent: 'Content',
       concentPlaceholder: 'Please enter content',
       designated_answer:
-        'Hello, I am MaxKB Assistant. My knowledge base only contains information related to MaxKB products. Please rephrase your question.'
+        'Hello, I am MaxKB Assistant. My knowledge base only contains information related to MaxKB products. Please rephrase your question.',
+      rrf_k: 'RRF param K'
     }
   },
   prompt: {

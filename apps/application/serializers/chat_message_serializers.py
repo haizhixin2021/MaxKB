@@ -66,6 +66,7 @@ class ChatInfo:
             'exclude_paragraph_id_list': [],
             'top_n': dataset_setting.get('top_n') if 'top_n' in dataset_setting else 3,
             'similarity': dataset_setting.get('similarity') if 'similarity' in dataset_setting else 0.6,
+            'rrf_k': dataset_setting.get('rrf_k') if 'rrf_k' in dataset_setting else 0.6,
             'max_paragraph_char_number': dataset_setting.get(
                 'max_paragraph_char_number') if 'max_paragraph_char_number' in dataset_setting else 5000,
             'history_chat_record': self.chat_record_list,
@@ -102,6 +103,8 @@ class ChatInfo:
                 Chat(id=self.chat_id, application_id=self.application.id, abstract=chat_record.problem_text,
                      client_id=client_id).save()
             # 插入会话记录
+            print("----------------------------------chat_message_serializers.py  append_chat_record chat_record---------------------")
+            print(chat_record)
             chat_record.save()
 
 
@@ -119,6 +122,8 @@ def get_post_handler(chat_info: ChatInfo):
                     padding_problem_text: str = None,
                     client_id=None,
                     **kwargs):
+            print("-----------------------------------get_post_handler handler  manage.get_details()--------------------")
+            print(manage.get_details())
             chat_record = ChatRecord(id=chat_record_id,
                                      chat_id=chat_id,
                                      problem_text=problem_text,
@@ -181,6 +186,7 @@ class ChatMessageSerializer(serializers.Serializer):
     def chat(self):
         self.is_valid(raise_exception=True)
         message = self.data.get('message')
+        #print(message)
         re_chat = self.data.get('re_chat')
         stream = self.data.get('stream')
         client_id = self.data.get('client_id')
@@ -195,6 +201,8 @@ class ChatMessageSerializer(serializers.Serializer):
                             .append_step(BaseGenerateHumanMessageStep)
                             .append_step(BaseChatStep)
                             .build())
+        print("-----------------------------chat_message_serializers.py step_list---------------------")
+        print(pipeline_manage_builder.step_list)
         exclude_paragraph_id_list = []
         # 相同问题是否需要排除已经查询到的段落
         if re_chat:
@@ -207,6 +215,8 @@ class ChatMessageSerializer(serializers.Serializer):
         # 构建运行参数
         params = chat_info.to_pipeline_manage_params(message, get_post_handler(chat_info), exclude_paragraph_id_list,
                                                      client_id, client_type, stream)
+        print("-----------------------------chat_message_serializers.py to_pipeline_manage_params---------------------")
+        print(params)                                         
         # 运行流水线作业
         pipeline_message.run(params)
         return pipeline_message.context['chat_result']

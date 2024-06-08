@@ -79,6 +79,7 @@ class ChatView(APIView):
 
     class Message(APIView):
         authentication_classes = [TokenAuth]
+        
 
         @action(methods=['POST'], detail=False)
         @swagger_auto_schema(operation_summary="对话",

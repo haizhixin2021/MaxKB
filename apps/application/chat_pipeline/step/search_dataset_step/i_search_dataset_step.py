@@ -39,6 +39,9 @@ class ISearchDatasetStep(IBaseChatPipelineStep):
         # 相似度 0-1之间
         similarity = serializers.FloatField(required=True, max_value=1, min_value=0,
                                             error_messages=ErrMessage.float("引用分段数"))
+        # RRF_k 0-100之间
+        rrf_k = serializers.FloatField(required=True, max_value=100, min_value=0,
+                                            error_messages=ErrMessage.float("RRF_k 常数"))
         search_mode = serializers.CharField(required=True, validators=[
             validators.RegexValidator(regex=re.compile("^embedding|keywords|blend$"),
                                       message="类型只支持register|reset_password", code=500)
@@ -54,13 +57,14 @@ class ISearchDatasetStep(IBaseChatPipelineStep):
 
     @abstractmethod
     def execute(self, problem_text: str, dataset_id_list: list[str], exclude_document_id_list: list[str],
-                exclude_paragraph_id_list: list[str], top_n: int, similarity: float, padding_problem_text: str = None,
+                exclude_paragraph_id_list: list[str], top_n: int, similarity: float, rrf_k: float, padding_problem_text: str = None,
                 search_mode: str = None,
                 **kwargs) -> List[ParagraphPipelineModel]:
         """
         关于 用户和补全问题 说明: 补全问题如果有就使用补全问题去查询 反之就用用户原始问题查询
         :param similarity:                         相关性
         :param top_n:                              查询多少条
+        :param rrf_k:                              RRF倒数融合排序常数K       
         :param problem_text:                       用户问题
         :param dataset_id_list:                    需要查询的数据集id列表
         :param exclude_document_id_list:           需要排除的文档id

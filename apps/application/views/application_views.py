@@ -362,11 +362,14 @@ class Application(APIView):
                                             dynamic_tag=keywords.get('application_id'))],
             compare=CompareConstants.AND))
         def get(self, request: Request, application_id: str):
+            print("-------------------------------HitTest request.query_params------------------")
+            print(request.query_params)
             return result.success(
                 ApplicationSerializer.HitTest(data={'id': application_id, 'user_id': request.user.id,
                                                     "query_text": request.query_params.get("query_text"),
                                                     "top_number": request.query_params.get("top_number"),
                                                     'similarity': request.query_params.get('similarity'),
+                                                    'rrf_k': request.query_params.get('rrf_k'),
                                                     'search_mode': request.query_params.get('search_mode')}).hit_test(
                 ))
 
